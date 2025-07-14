@@ -36,3 +36,74 @@
     transform: rotate(360deg);
   }
 }
+
+/* App.css'in sonuna ekle */
+
+.room-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: calc(100vh - 100px); /* Ekran yüksekliğinden başlık payını çıkar */
+  gap: 20px; /* Paneller arası boşluk */
+}
+
+.side-panel {
+  flex: 0 0 250px; /* Yan panelin genişliği sabit 250px olsun, büyümesin/küçülmesin */
+  background-color: #333942;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-panel {
+  flex: 1; /* Ana panel kalan tüm boşluğu doldursun */
+  background-color: #3c424a;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+/* Yan paneldeki listenin stillerini de güzelleştirelim */
+.side-panel ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.side-panel li {
+  background-color: #4a5058;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+}
+
+.task-display {
+  background-color: #2c313a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.task-display h2 {
+  margin-top: 0;
+}
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.task-form input, .task-form textarea {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background-color: #4a5058;
+  color: white;
+  font-size: 1em;
+}
+.task-form button {
+  padding: 10px 15px;
+  border-radius: 4px;
+  border: none;
+  background-color: #61dafb;
+  color: #282c34;
+  font-weight: bold;
+  cursor: pointer;
+}
