@@ -1,88 +1,71 @@
-// Lütfen bu dosyanın içeriğini, mevcut Room.js dosyanla tamamen değiştir.
-
 import React, { useState, useEffect } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+
+import JoinPrompt from './JoinPrompt';
 import TaskDisplay from './TaskDisplay';
 import TaskForm from './TaskForm';
 
-function Room({ user, stompClient }) {
+function Room({ stompClient }) {
+  const { roomId } = useParams();
+  const location = useLocation();
+  const [user, setUser] = useState(location.state?.user);
+
   const [participants, setParticipants] = useState([]);
   const [activeTask, setActiveTask] = useState({ title: 'Henüz bir görev belirlenmedi.', description: '' });
 
   useEffect(() => {
-    let participantsSubscription;
-    let taskSubscription;
-    let privateTaskSubscription;
-
-    if (stompClient) {
-      // 1. ABONELİKLERİ BAŞLAT
-      // Katılımcı listesini dinle
-      participantsSubscription = stompClient.subscribe(
-        `/topic/room/${user.roomId}/participants`,
-        (message) => {
-          const userList = JSON.parse(message.body);
-          setParticipants(userList);
-        }
-      );
-      // Görev güncellemelerini dinle
-      taskSubscription = stompClient.subscribe(
-        `/topic/room/${user.roomId}/task`,
-        (message) => {
-          const task = JSON.parse(message.body);
-          setActiveTask(task);
-        }
-      );
-      // Sana özel gelecek görev bilgisini dinle
-      privateTaskSubscription = stompClient.subscribe(
-        `/user/queue/task`,
-        (message) => {
-          const task = JSON.parse(message.body);
-          setActiveTask(task);
-        }
-      );
-
-      // 2. SUNUCUYA İSTEKLERİ GÖNDER
-      // Odaya katıldığını sunucuya bildir (KATILIMCI LİSTESİ İÇİN)
-      stompClient.publish({
-        destination: `/app/room/${user.roomId}/join`,
-        body: JSON.stringify({ sender: user.name, type: 'JOIN' }),
-      });
-
-      // Sunucudan mevcut görevi talep et (GÖREV BİLGİSİ İÇİN)
-      stompClient.publish({
-        destination: `/app/room/${user.roomId}/get-task`,
-        body: '', // Sadece tetiklemek için, içerik önemli değil
-      });
+    // stompClient veya user bilgisi hazır değilse, hiçbir şey yapma.
+    if (!stompClient || !user?.name || !roomId) {
+      return;
     }
 
-    // 3. TEMİZLİK FONKSİYONU
-    return () => {
-      if (participantsSubscription) participantsSubscription.unsubscribe();
-      if (taskSubscription) taskSubscription.unsubscribe();
-      if (privateTaskSubscription) privateTaskSubscription.unsubscribe();
-    };
-  }, [stompClient, user.roomId, user.name]);
+    // --- ABONELİKLER ---
+    // Artık sadece iki genel kanalı dinliyoruz.
+    
+    const participantsSub = stompClient.subscribe(`/topic/room/${roomId}/participants`, (message) => {
+      setParticipants(JSON.parse(message.body));
+    });
 
+    const taskSub = stompClient.subscribe(`/topic/room/${roomId}/task`, (message) => {
+      setActiveTask(JSON.parse(message.body));
+    });
+
+    // --- TEK BİR İSTEK: KAYDOL ---
+    // Sunucuya "Ben geldim" diyoruz. Sunucu bu mesaja cevaben
+    // yukarıda abone olduğumuz kanallara güncel bilgileri gönderecek.
+    stompClient.publish({
+      destination: `/app/room/${roomId}/register`,
+      body: JSON.stringify({ sender: user.name }),
+    });
+
+    // Component DOM'dan kaldırıldığında abonelikleri temizle
+    return () => {
+      participantsSub.unsubscribe();
+      taskSub.unsubscribe();
+    };
+  }, [stompClient, user, roomId]);
+
+  if (!user) {
+    return <JoinPrompt onNameSubmit={(name) => setUser({ name })} />;
+  }
+
+  if (!stompClient) {
+    return <div>Odaya bağlanılıyor...</div>;
+  }
 
   return (
     <div className="room-container">
-      {/* SAĞ PANEL: Katılımcılar */}
       <div className="side-panel">
-        <h3>Oda: {user.roomId}</h3>
-        <div style={{ border: '1px solid white', padding: '10px', minWidth: '200px' }}>
+        <h3>Oda: {roomId}</h3>
+        <div>
           <h4>Katılımcılar ({participants.length})</h4>
-          <ul>
-            {participants.map((p, index) => (
-              <li key={index}>{p}</li>
-            ))}
-          </ul>
+          <ul>{participants.map((p, index) => <li key={index}>{p}</li>)}</ul>
         </div>
       </div>
-
-      {/* ANA PANEL: Görev ve Oylama Alanı */}
       <div className="main-panel">
         <TaskDisplay task={activeTask} />
-        <hr style={{ borderColor: '#4a5058', margin: '20px 0' }} />
-        <TaskForm roomId={user.roomId} stompClient={stompClient} />
+        <hr />
+        <TaskForm roomId={roomId} stompClient={stompClient} />
       </div>
     </div>
   );

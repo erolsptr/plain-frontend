@@ -1,58 +1,37 @@
+// Düzeltilmiş Lobby.js
+
 import React, { useState } from 'react';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+// useNavigate ve useEffect artık burada kullanılmayacak.
 
-const SOCKET_URL = 'http://localhost:8080/ws-poker';
-
-function Lobby({ onJoin }) {
+function Lobby({ onRoomCreated }) { // onRoomCreated prop'u App.js'ten geliyor.
   const [name, setName] = useState('');
-  const [roomId, setRoomId] = useState('');
   const [error, setError] = useState('');
 
-  // Lobby.js içinde
-
-const connectAndJoin = () => {
-    if (!name || !roomId) {
-      setError('İsim ve Oda ID alanları zorunludur.');
+  const handleCreateRoom = () => {
+    if (!name) {
+      setError('Oda oluşturmak için bir isim girmelisiniz.');
       return;
     }
     setError('');
-
-    const stompClient = new Client({
-      webSocketFactory: () => new SockJS(SOCKET_URL),
-      onConnect: () => {
-        // ARTIK BURADA "JOIN" MESAJI GÖNDERMİYORUZ!
-        // Sadece başarılı bağlantı bilgisini ve client'ı yukarı iletiyoruz.
-        console.log("Bağlantı başarılı, App component'ine bilgi veriliyor.");
-        onJoin({ name, roomId }, stompClient);
-      },
-      onStompError: (frame) => {
-        console.error('Broker reported error: ' + frame.headers['message']);
-        console.error('Additional details: ' + frame.body);
-        setError('Sunucuya bağlanırken bir hata oluştu.');
-      },
-    });
-
-    stompClient.activate();
+    // Backend'e oda oluşturma isteği göndermemiz gerekecek.
+    // Şimdilik, sadece App.js'e "yeni bir oda isteniyor" bilgisini gönderiyoruz.
+    onRoomCreated({ name }); // Sadece kullanıcı adını gönderiyoruz, oda ID'sini backend üretecek.
   };
 
   return (
-    <div>
-      <h2>Odaya Katıl</h2>
-      <input
-        type="text"
-        placeholder="İsminiz"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Oda ID"
-        value={roomId}
-        onChange={(e) => setRoomId(e.target.value)}
-      />
-      <button onClick={connectAndJoin}>Katıl</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="lobby-container">
+      <h2>Odaya Hoşgeldin!</h2>
+      <p>Yeni bir oda oluşturmak için ismini gir ve butona tıkla.</p>
+      <div className="lobby-form">
+        <input
+          type="text"
+          placeholder="İsminiz"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button onClick={handleCreateRoom}>Oda Oluştur</button>
+      </div>
+      {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
     </div>
   );
 }

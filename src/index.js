@@ -1,13 +1,22 @@
+// src/index.js
+
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
+import ReactDOM from 'react-dom/client'; // Create-react-app V5+ için bu şekilde
+import './index.css'; // Genel CSS dosyası
+import App from './App'; // Ana App component'imiz
 import reportWebVitals from './reportWebVitals';
 
+// Router'ı kullanabilmek için BrowserRouter'u index.js'e ekliyoruz.
+import { BrowserRouter } from 'react-router-dom';
+
+// React v18 için createRoot kullanılıyor.
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    {/* BrowserRouter, tüm uygulamamızı sarmalayacak. */}
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
