@@ -1,94 +1,53 @@
-// Nihai ve Doğru App.js
-
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 
 import './App.css';
-import Lobby from './Lobby';
-import Room from './Room';
 
-const SOCKET_URL = 'http://localhost:8080/ws-poker';
+// Henüz oluşturmadığımız ama birazdan oluşturacağımız yeni sayfalar/component'ler
+import HomePage from './pages/HomePage';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import Room from './pages/Room'; // Room component'ini de 'pages' klasörüne taşıyacağız.
+import Navbar from './components/Navbar'; // Tüm sayfalarda görünecek bir navigasyon barı
 
 function App() {
-  const navigate = useNavigate();
-  const [stompClient, setStompClient] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+  // Uygulamanın en temel state'i: Giriş yapmış bir kullanıcı var mı?
+  // localStorage'dan başlangıç değerini almayı deneyebiliriz, bu sayfa yenilemede login'i korur.
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // Bu useEffect, uygulama ilk açıldığında SADECE BİR KEZ çalışır
-  // ve WebSocket bağlantısını kurar.
-  useEffect(() => {
-    const client = new Client({
-      webSocketFactory: () => new SockJS(SOCKET_URL),
-      onConnect: () => {
-        console.log('WebSocket Bağlantısı Kuruldu!');
-        setIsConnected(true);
-        setStompClient(client);
-      },
-      onStompError: (frame) => console.error('STOMP Hatası:', frame),
-    });
-    
-    client.activate();
-
-    // Uygulama kapandığında bağlantıyı kes
-    return () => {
-      if (client.connected) client.deactivate();
-    };
-  }, []); // Boş bağımlılık dizisi, sadece bir kez çalışmasını sağlar.
-
-  // Bu fonksiyon, Lobby'den tetiklenecek.
-  const createRoom = async (userData) => {
-    // Backend'e REST API isteği ile oda oluştur.
-    try {
-      const response = await fetch('/api/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: userData.name }),
-      });
-      if (!response.ok) throw new Error('Oda oluşturulamadı.');
-      
-      const newRoom = await response.json(); // Cevap: { roomId: 'A4T8B' }
-
-      // Kullanıcıyı yeni odanın URL'sine yönlendir.
-      navigate(`/room/${newRoom.roomId}`, { state: { user: userData } });
-    } catch (error) {
-      console.error("Oda oluşturma hatası:", error);
-    }
+  // Bu fonksiyonlar, Login ve Register sayfalarından çağrılacak.
+  const handleLogin = (userData) => {
+    setCurrentUser(userData);
+    // JWT'yi localStorage'a kaydetme mantığı buraya gelecek.
   };
 
-  // Henüz bağlantı kurulmadıysa bir yükleme ekranı göster.
-  if (!isConnected) {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <h1>plAIn - AI-Powered Planning Poker</h1>
-        </header>
-        <main className="app-content">
-          <div>Sunucuya bağlanılıyor...</div>
-        </main>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    setCurrentUser(null);
+    // JWT'yi localStorage'dan silme mantığı buraya gelecek.
+  };
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>plAIn - AI-Powered Planning Poker</h1>
-      </header>
+      {/* Navbar, tüm sayfalarda ortak olarak görünecek. */}
+      {/* Kullanıcının login durumuna göre farklı butonlar gösterebilir. */}
+      <Navbar user={currentUser} onLogout={handleLogout} />
+      
       <main className="app-content">
         <Routes>
-          <Route path="/" element={<Lobby onRoomCreated={createRoom} />} />
-          {/* Room component'ine HAZIR stompClient'ı prop olarak geçiyoruz */}
-          <Route path="/room/:roomId" element={<Room stompClient={stompClient} />} />
+          {/* Herkesin erişebileceği yollar */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          
+          {/* Sadece giriş yapmış kullanıcıların erişebileceği yollar */}
+          {/* İleride "Protected Route" mantığı ile daha güvenli hale getireceğiz. */}
+          <Route path="/dashboard" element={<DashboardPage user={currentUser} />} />
+          <Route path="/room/:roomId" element={<Room user={currentUser} />} />
         </Routes>
       </main>
     </div>
   );
 }
 
-// AppWrapper'ı (veya doğrudan index.js'deki <Router> sarmalayıcısını) kullanmaya devam
-// export default App; // Bu şekilde bırakıp index.js'de <App/>'i Router ile sarmalamak daha temiz.
-// Bir önceki cevabımda AppWrapper'ı önermiştim, o yapı doğru.
-// Eğer index.js'de <BrowserRouter> varsa, bu App.js'i doğrudan export edebilirsin.
 export default App;

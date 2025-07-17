@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 
-import JoinPrompt from './JoinPrompt';
-import TaskDisplay from './TaskDisplay';
-import TaskForm from './TaskForm';
-import VotingCards from './VotingCards';
-import './VotingCards.css';
+import JoinPrompt from '../JoinPrompt';
+import TaskDisplay from '../TaskDisplay';
+import TaskForm from '../TaskForm';
+import VotingCards from '../VotingCards';
+import '../VotingCards.css';
 
 const CARD_SETS = {
   FIBONACCI: ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'],
