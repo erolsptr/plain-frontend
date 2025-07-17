@@ -337,3 +337,29 @@
 .card-checkbox-item input[type="checkbox"] {
   cursor: pointer;
 }
+
+/* App.css sonuna */
+.new-task-button {
+  margin-top: auto; /* Butonu yan panelin en altına iter */
+  background-color: #555c66;
+}
+
+.new-task-button:hover {
+  background-color: #6c757d;
+}
+
+/* App.css sonuna */
+.side-panel-button {
+  width: 100%; /* Butonların genişliği panele yayılsın */
+  margin-top: 10px; /* Butonlar arasına üstten boşluk ekle */
+}
+
+/* new-task-button'ı en alta iten stili biraz değiştirelim */
+.new-task-button {
+  margin-top: 10px; /* auto yerine bu daha tutarlı olacak */
+}
+
+/* Yan paneldeki tüm butonları dikey bir düzende toplamak için */
+.side-panel > button {
+  display: block; /* Her butonun kendi satırını kaplamasını sağlar */
+}

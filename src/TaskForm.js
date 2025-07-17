@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 
 const CARD_SETS = {
   FIBONACCI: ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'],
+  // YENİ: İsteğini karşılayan, ara değerleri içeren set.
+  MODIFIED_FIB: ['0', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '8', '13', '?', '☕'],
   SCRUM: ['0', '½', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'],
   SEQUENTIAL: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
   HOURS: ['1', '2', '4', '8', '16', '24', '32', '40'],
 };
-const MANUAL_CARDS = [...new Set([...CARD_SETS.FIBONACCI, ...CARD_SETS.SCRUM, ...CARD_SETS.SEQUENTIAL, ...CARD_SETS.HOURS])].sort((a,b) => Number(a) - Number(b));
+// MANUAL_CARDS listesi de bu yeni seti içerecek şekilde güncellendi.
+const MANUAL_CARDS = [...new Set([...CARD_SETS.FIBONACCI, ...CARD_SETS.MODIFIED_FIB, ...CARD_SETS.SCRUM, ...CARD_SETS.SEQUENTIAL, ...CARD_SETS.HOURS])].sort((a,b) => {
+    // '½' gibi değerler için özel sıralama
+    const valA = a === '½' ? 0.5 : Number(a);
+    const valB = b === '½' ? 0.5 : Number(b);
+    if (isNaN(valA) || isNaN(valB)) return 1; // '?' ve '☕' gibi metinleri sona at
+    return valA - valB;
+});
 
 
 function TaskForm({ roomId, stompClient, user }) { 
@@ -24,7 +33,6 @@ function TaskForm({ roomId, stompClient, user }) {
   }, [cardSet]);
 
   const handleCardToggle = (cardValue) => {
-    // Artık herhangi bir mod kontrolü yapmıyoruz, her zaman çalışır.
     setSelectedCards(prevSelected => {
       const newSelected = new Set(prevSelected);
       if (newSelected.has(cardValue)) {
@@ -81,7 +89,9 @@ function TaskForm({ roomId, stompClient, user }) {
           onChange={(e) => setCardSet(e.target.value)}
         >
           <option value="FIBONACCI">Fibonacci</option>
-          <option value="SCRUM">Scrum</option>
+          {/* YENİ: Dropdown'a yeni seçenek eklendi. */}
+          <option value="MODIFIED_FIB">Değiştirilmiş Fibonacci (Ara Değerli)</option>
+          <option value="SCRUM">Scrum </option>
           <option value="SEQUENTIAL">Sıralı</option>
           <option value="HOURS">Saat</option>
           <option value="MANUAL">Tümünü Göster/Düzenle</option>
@@ -90,14 +100,12 @@ function TaskForm({ roomId, stompClient, user }) {
 
       <div className="customize-cards-container">
         {currentVisibleCards.map(card => (
-          // div yerine label kullanarak tüm alana tıklanabilirlik kazandırıyoruz.
           <label key={card} className="card-checkbox-item">
             <input 
               type="checkbox"
               value={card}
               checked={selectedCards.has(card)}
               onChange={() => handleCardToggle(card)}
-              // disabled özelliği kaldırıldı, artık her zaman aktif.
             />
             {card} 
           </label>
