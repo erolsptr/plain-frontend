@@ -36,7 +36,7 @@ function LoginPage({ onLogin }) {
       }
 
       // App component'ine kullanıcının giriş yaptığını bildir
-      onLogin(data.user);
+      onLogin(data.user, data.token);
 
       // Kullanıcıyı kontrol paneline yönlendir
       navigate('/dashboard');

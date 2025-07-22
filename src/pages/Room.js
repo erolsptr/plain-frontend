@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 import JoinPrompt from '../JoinPrompt';
 import TaskDisplay from '../TaskDisplay';
@@ -7,14 +9,9 @@ import TaskForm from '../TaskForm';
 import VotingCards from '../VotingCards';
 import '../VotingCards.css';
 
-const CARD_SETS = {
-  FIBONACCI: ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'],
-  SCRUM: ['0', '½', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'],
-  SEQUENTIAL: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-  HOURS: ['1', '2', '4', '8', '16', '24', '32', '40'],
-  MANUAL: ['0', '0.5', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '6', '7', '8', '9', '10', '13', '20', '?'],
-};
+const SOCKET_URL = 'http://localhost:8080/ws-poker';
 
+// Helper fonksiyon, oylama sonuçlarını analiz eder.
 const getVoteResult = (votes) => {
     if (!votes || Object.keys(votes).length === 0) return null;
     const voteCounts = Object.values(votes).reduce((acc, vote) => {
@@ -36,63 +33,82 @@ const getVoteResult = (votes) => {
     return tie ? "Anlaşma Yok" : consensusVote;
 };
 
-
-function Room({ stompClient }) {
+// App.js'ten gelen 'user' prop'unu 'currentUser' olarak yeniden adlandırıyoruz
+// ki component içindeki 'user' state'i ile karışmasın.
+function Room({ user: currentUser }) {
   const { roomId } = useParams();
   const location = useLocation();
-  const [user, setUser] = useState(location.state?.user);
-
+  
+  // Component'in kendi kullanıcı state'i. Başlangıç değerini App'ten veya URL'den alır.
+  const [user, setUser] = useState(currentUser || location.state?.user);
+  
+  const [stompClient, setStompClient] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [roomOwner, setRoomOwner] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [activeTask, setActiveTask] = useState({ title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '0,1,2,3,5,8,13,21,?,☕' });
+  const [activeTask, setActiveTask] = useState({ title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '' });
   const [votes, setVotes] = useState({});
   const [hasVoted, setHasVoted] = useState(false);
   const [revealVotes, setRevealVotes] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   useEffect(() => {
-    if (!stompClient || !user?.name || !roomId) {
+    // Eğer kullanıcı bilgisi (isim) yoksa, bağlantı kurma.
+    if (!user?.name) {
       return;
     }
 
-    const stateSub = stompClient.subscribe(`/topic/room/${roomId}/state`, (message) => {
-        const roomState = JSON.parse(message.body);
-        setRoomOwner(roomState.owner);
-        setParticipants(roomState.participants || []);
+    const client = new Client({
+      webSocketFactory: () => new SockJS(SOCKET_URL),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('WebSocket bağlantısı başarılı!');
+        setIsConnected(true);
+
+        client.subscribe(`/topic/room/${roomId}/state`, (message) => {
+            const roomState = JSON.parse(message.body);
+            setRoomOwner(roomState.owner);
+            setParticipants(roomState.participants || []);
+            const newActiveTask = roomState.activeTask || { title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '' };
+            setActiveTask(newActiveTask);
+            if (newActiveTask.title !== 'Henüz bir görev belirlenmedi.') {
+                setShowTaskForm(false);
+            } else {
+                setShowTaskForm(user?.name === roomState.owner);
+            }
+            setVotes(roomState.votes || {});
+            setRevealVotes(false);
+            setHasVoted(false);
+        });
         
-        const newActiveTask = roomState.activeTask || { title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '0,1,2,3,5,8,13,21,?,☕' };
-        setActiveTask(newActiveTask);
-        
-        if (newActiveTask.title !== 'Henüz bir görev belirlenmedi.') {
-            setShowTaskForm(false);
-        } else {
-            setShowTaskForm(user?.name === roomState.owner);
-        }
+        client.subscribe(`/topic/room/${roomId}/votes`, (message) => {
+          setVotes(JSON.parse(message.body));
+        });
 
-        setVotes(roomState.votes || {});
-        setRevealVotes(false);
-        setHasVoted(false);
-    });
-    
-    const votesSub = stompClient.subscribe(`/topic/room/${roomId}/votes`, (message) => {
-      setVotes(JSON.parse(message.body));
-    });
+        client.subscribe(`/topic/room/${roomId}/reveal`, () => {
+          setRevealVotes(true);
+        });
 
-    const revealSub = stompClient.subscribe(`/topic/room/${roomId}/reveal`, () => {
-      setRevealVotes(true);
+        client.publish({
+          destination: `/app/room/${roomId}/register`,
+          body: JSON.stringify({ sender: user.name }),
+        });
+      },
+      onDisconnect: () => {
+        setIsConnected(false);
+        console.log('WebSocket bağlantısı kesildi.');
+      },
     });
 
-    stompClient.publish({
-      destination: `/app/room/${roomId}/register`,
-      body: JSON.stringify({ sender: user.name }),
-    });
+    client.activate();
+    setStompClient(client);
 
     return () => {
-      stateSub.unsubscribe();
-      votesSub.unsubscribe();
-      revealSub.unsubscribe();
+      if (client) {
+        client.deactivate();
+      }
     };
-  }, [stompClient, user, roomId]);
+  }, [user, roomId]); // Sadece user veya roomId değiştiğinde yeniden bağlanır.
 
   const isModerator = user?.name === roomOwner;
   const allVotesIn = participants.length > 0 && participants.length === Object.keys(votes).length;
@@ -125,7 +141,6 @@ function Room({ stompClient }) {
             cardSet: activeTask.cardSet,
             type: 'SET_TASK'
         };
-
         stompClient.publish({
             destination: `/app/room/${roomId}/set-task`,
             body: JSON.stringify(taskMessage),
@@ -137,11 +152,16 @@ function Room({ stompClient }) {
     setShowTaskForm(prev => !prev);
   }
 
+  // --- RENDER BLOKLARI ---
+  
   if (!user) {
+    // Linke doğrudan gelen ve henüz ismi olmayan kullanıcılar için
     return <JoinPrompt onNameSubmit={(name) => setUser({ name })} />;
   }
-  if (!stompClient) {
-    return <div>Odaya bağlanılıyor...</div>;
+
+  if (!isConnected) {
+    // WebSocket bağlantısı kurulana kadar bekleme ekranı
+    return <div className="loading-screen">Odaya bağlanılıyor...</div>;
   }
 
   const currentCards = activeTask.cardSet ? activeTask.cardSet.split(',') : [];

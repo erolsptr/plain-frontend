@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Navbar.css'; // Bu dosyayı birazdan oluşturacağız.
+import './Navbar.css';
+
+// Logomuzu projemize dahil ediyoruz.
+// Bu yolun doğru olduğundan emin ol: src/assets/logo.png
+import logo from '../assets/logo.png'; 
 
 function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
 
   const handleLogoutClick = () => {
-    // App.js'e çıkış yapma isteğini iletiyoruz.
     onLogout();
-    // Kullanıcıyı ana sayfaya yönlendiriyoruz.
     navigate('/');
   };
 
@@ -16,11 +18,11 @@ function Navbar({ user, onLogout }) {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          plAIn 🤖
+          {/* Metin yerine artık bir resim gösteriyoruz */}
+          <img src={logo} alt="plAIn Logo" className="navbar-logo-img" />
         </Link>
         <ul className="navbar-menu">
           {user ? (
-            // Kullanıcı giriş yapmışsa gösterilecekler
             <>
               <li className="navbar-item">
                 <span className="navbar-user-greeting">Hoşgeldin, {user.name}!</span>
@@ -37,7 +39,6 @@ function Navbar({ user, onLogout }) {
               </li>
             </>
           ) : (
-            // Kullanıcı giriş yapmamışsa gösterilecekler
             <>
               <li className="navbar-item">
                 <Link to="/login" className="navbar-links">

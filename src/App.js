@@ -1,47 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-
 import './App.css';
 
-// Henüz oluşturmadığımız ama birazdan oluşturacağımız yeni sayfalar/component'ler
 import HomePage from './pages/HomePage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import Room from './pages/Room'; // Room component'ini de 'pages' klasörüne taşıyacağız.
-import Navbar from './components/Navbar'; // Tüm sayfalarda görünecek bir navigasyon barı
+import Room from './pages/Room';
+import Navbar from './components/Navbar';
 
 function App() {
-  // Uygulamanın en temel state'i: Giriş yapmış bir kullanıcı var mı?
-  // localStorage'dan başlangıç değerini almayı deneyebiliriz, bu sayfa yenilemede login'i korur.
   const [currentUser, setCurrentUser] = useState(null);
+  const [authIsReady, setAuthIsReady] = useState(false);
 
-  // Bu fonksiyonlar, Login ve Register sayfalarından çağrılacak.
-  const handleLogin = (userData) => {
-    setCurrentUser(userData);
-    // JWT'yi localStorage'a kaydetme mantığı buraya gelecek.
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        // JWT'nin payload kısmını (ortadaki) decode et
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        // Token'ın son kullanma tarihini kontrol et (saniye cinsinden)
+        if (payload.exp * 1000 > Date.now()) {
+          // Token geçerliyse, kullanıcıyı state'e set et
+          const user = { 
+            email: payload.sub, // 'sub' genellikle email'i tutar
+            name: payload.name || payload.sub.split('@')[0] // 'name' claim'i varsa onu, yoksa email'in başını kullan
+          };
+          setCurrentUser(user);
+        } else {
+          // Token'ın süresi dolmuşsa, localStorage'dan sil
+          localStorage.removeItem('token');
+        }
+      } catch (e) {
+        console.error("Token parse edilemedi veya geçersiz:", e);
+        localStorage.removeItem('token');
+      }
+    }
+    // Auth kontrolü her durumda bitti
+    setAuthIsReady(true);
+  }, []);
+
+  const handleLogin = (user, token) => {
+    localStorage.setItem('token', token);
+    setCurrentUser(user);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     setCurrentUser(null);
-    // JWT'yi localStorage'dan silme mantığı buraya gelecek.
   };
+
+  if (!authIsReady) {
+    return <div className="loading-screen">Yükleniyor...</div>;
+  }
 
   return (
     <div className="App">
-      {/* Navbar, tüm sayfalarda ortak olarak görünecek. */}
-      {/* Kullanıcının login durumuna göre farklı butonlar gösterebilir. */}
       <Navbar user={currentUser} onLogout={handleLogout} />
       
       <main className="app-content">
         <Routes>
-          {/* Herkesin erişebileceği yollar */}
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
           
-          {/* Sadece giriş yapmış kullanıcıların erişebileceği yollar */}
-          {/* İleride "Protected Route" mantığı ile daha güvenli hale getireceğiz. */}
           <Route path="/dashboard" element={<DashboardPage user={currentUser} />} />
           <Route path="/room/:roomId" element={<Room user={currentUser} />} />
         </Routes>

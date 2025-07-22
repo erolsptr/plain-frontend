@@ -7,26 +7,28 @@
 
 .auth-form {
   width: 100%;
-  max-width: 400px;
-  background-color: #2c313a;
-  padding: 30px;
-  border-radius: 10px;
+  max-width: 420px; /* Biraz genişlettim */
+  background-color: var(--panel-color); /* Renk değişkeni kullandım */
+  padding: 40px; /* Padding'i her yöne artırdım, bu ortalamaya yardımcı olur */
+  border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box; /* Padding'in genişliği etkilememesini sağlar */
 }
 
 .auth-form h2 {
   text-align: center;
-  color: #fff;
-  margin-bottom: 25px;
+  color: var(--text-color);
+  margin-bottom: 30px;
 }
 
 .form-group {
   margin-bottom: 20px;
+  text-align: left; /* Label'ları sola yasla */
 }
 
 .form-group label {
   display: block;
-  color: #ccc;
+  color: var(--text-color-muted);
   margin-bottom: 8px;
   font-size: 0.9rem;
 }
@@ -34,16 +36,17 @@
 .form-group input {
   width: 100%;
   padding: 12px;
-  background-color: #3c424a;
-  border: 1px solid #555;
-  border-radius: 5px;
-  color: #fff;
+  background-color: var(--bg-color-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #61dafb;
+  border-color: var(--primary-color);
 }
 
 .auth-button {
@@ -60,26 +63,26 @@
 }
 
 .auth-error-message {
-  background-color: #ff6b6b20;
-  color: #ff6b6b;
-  border: 1px solid #ff6b6b;
+  background-color: #f5656520;
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
 }
 
 .auth-success-message {
-  background-color: #2ecc7120;
-  color: #2ecc71;
-  border: 1px solid #2ecc71;
+  background-color: #48bb7820;
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
 }
 
 .auth-switch-link {
   text-align: center;
   margin-top: 20px;
-  color: #ccc;
+  color: var(--text-color-muted);
   font-size: 0.9rem;
 }
 
 .auth-switch-link a {
-  color: #61dafb;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: bold;
 }
