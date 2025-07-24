@@ -6,7 +6,7 @@
 
 .dashboard-container h2 {
   font-size: 2.5rem;
-  color: #fff;
+  color: var(--text-color);
   text-align: center;
   margin-bottom: 10px;
 }
@@ -14,61 +14,10 @@
 .dashboard-container > p {
   text-align: center;
   font-size: 1.2rem;
-  color: #ccc;
+  color: var(--text-color-muted);
   margin-bottom: 40px;
 }
 
-.dashboard-actions {
-  text-align: center;
-  margin-bottom: 50px;
-}
-
-.dashboard-actions .btn-primary {
-  padding: 15px 30px;
-  font-size: 1.2rem;
-}
-
-.past-rooms-section {
-  background-color: #2c313a;
-  padding: 30px;
-  border-radius: 10px;
-}
-
-.past-rooms-section h3 {
-  font-size: 1.8rem;
-  color: #61dafb;
-  border-bottom: 1px solid #4a5058;
-  padding-bottom: 15px;
-  margin-top: 0;
-  margin-bottom: 20px;
-}
-
-.placeholder-text {
-  color: #a7b0c0;
-  font-style: italic;
-}
-
-.dashboard-container {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 20px;
-}
-
-.dashboard-container h2 {
-  font-size: 2.5rem;
-  color: #fff;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.dashboard-container > p {
-  text-align: center;
-  font-size: 1.2rem;
-  color: #ccc;
-  margin-bottom: 40px;
-}
-
-/* YENİ: İki aksiyon kartı için grid yapısı */
 .dashboard-actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -77,7 +26,7 @@
 }
 
 .action-card {
-  background-color: #2c313a;
+  background-color: var(--panel-color);
   padding: 30px;
   border-radius: 10px;
   text-align: center;
@@ -88,12 +37,12 @@
 
 .action-card h3 {
   margin-top: 0;
-  color: #61dafb;
+  color: var(--primary-color);
 }
 
 .action-card p {
-  color: #a7b0c0;
-  flex-grow: 1; /* p etiketinin esneyerek butonları aşağı itmesini sağlar */
+  color: var(--text-color-muted);
+  flex-grow: 1;
 }
 
 .join-room-form {
@@ -104,31 +53,74 @@
 .room-code-input {
   flex-grow: 1;
   padding: 10px;
-  background-color: #3c424a;
-  border: 1px solid #555;
+  background-color: var(--bg-color-light);
+  border: 1px solid var(--border-color);
   border-radius: 5px;
-  color: #fff;
+  color: var(--text-color);
   font-size: 1rem;
   text-align: center;
   font-weight: bold;
 }
 
 .past-rooms-section {
-  background-color: #2c313a;
+  background-color: var(--panel-color);
   padding: 30px;
   border-radius: 10px;
 }
 
 .past-rooms-section h3 {
   font-size: 1.8rem;
-  color: #61dafb;
-  border-bottom: 1px solid #4a5058;
+  color: var(--primary-color);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 15px;
   margin-top: 0;
   margin-bottom: 20px;
 }
 
 .placeholder-text {
-  color: #a7b0c0;
+  color: var(--text-color-muted);
   font-style: italic;
+}
+
+/* KART GÖRÜNÜMÜ İÇİN GEREKLİ STİLLER */
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.room-card-link {
+  text-decoration: none;
+}
+
+.room-card {
+  background-color: var(--bg-color-light);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease-in-out;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary-color);
+}
+
+.room-card-id {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-family: 'Courier New', Courier, monospace;
+  word-break: break-all;
+}
+
+.room-card-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-color-muted);
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+  margin-top: 10px;
 }
