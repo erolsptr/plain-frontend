@@ -4,12 +4,11 @@ import './DashboardPage.css';
 
 function DashboardPage({ user }) {
   const navigate = useNavigate();
-  const location = useLocation(); // Sayfa konumu değişikliklerini dinlemek için
+  const location = useLocation();
   const [roomCode, setRoomCode] = useState('');
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Bu useEffect, user bilgisi geldiğinde VEYA sayfaya geri dönüldüğünde çalışır.
   useEffect(() => {
     const fetchRooms = async () => {
       setIsLoading(true);
@@ -37,7 +36,7 @@ function DashboardPage({ user }) {
     if (user) {
         fetchRooms();
     }
-  }, [user, location]); // location'ı bağımlılık olarak eklemek, geri tuşuna basıldığında listeyi günceller.
+  }, [user, location]);
 
   const handleCreateRoom = async () => {
     if (!user || !user.name) {
@@ -116,7 +115,6 @@ function DashboardPage({ user }) {
         {isLoading ? (
           <p className="placeholder-text">Odalar yükleniyor...</p>
         ) : rooms.length > 0 ? (
-          // DÜZELTİLDİ: Buradaki JSX yapısı, CSS'in doğru çalışması için kesin hali.
           <div className="rooms-grid">
             {rooms.map(room => (
               <Link to={`/room/${room.roomId}`} state={{ user: user }} key={room.roomId} className="room-card-link">
@@ -131,8 +129,9 @@ function DashboardPage({ user }) {
             ))}
           </div>
         ) : (
+          // DEĞİŞİKLİK BURADA:
           <p className="placeholder-text">
-            Henüz katıldığınız veya oluşturduğunuz bir oda bulunmuyor.
+            Bu listede şimdilik sadece sizin oluşturduğunuz odalar görüntülenir.
           </p>
         )}
       </div>

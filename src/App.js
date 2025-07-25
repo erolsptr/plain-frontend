@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
 
@@ -10,50 +10,26 @@ import Room from './pages/Room';
 import Navbar from './components/Navbar';
 
 function App() {
+  // currentUser state'i artık her zaman null olarak başlar.
   const [currentUser, setCurrentUser] = useState(null);
-  const [authIsReady, setAuthIsReady] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        // JWT'nin payload kısmını (ortadaki) decode et
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        // Token'ın son kullanma tarihini kontrol et (saniye cinsinden)
-        if (payload.exp * 1000 > Date.now()) {
-          // Token geçerliyse, kullanıcıyı state'e set et
-          const user = { 
-            email: payload.sub, // 'sub' genellikle email'i tutar
-            name: payload.name || payload.sub.split('@')[0] // 'name' claim'i varsa onu, yoksa email'in başını kullan
-          };
-          setCurrentUser(user);
-        } else {
-          // Token'ın süresi dolmuşsa, localStorage'dan sil
-          localStorage.removeItem('token');
-        }
-      } catch (e) {
-        console.error("Token parse edilemedi veya geçersiz:", e);
-        localStorage.removeItem('token');
-      }
-    }
-    // Auth kontrolü her durumda bitti
-    setAuthIsReady(true);
-  }, []);
+  // Otomatik giriş (auto-login) mantığı tamamen kaldırıldı.
+  // useEffect(() => { ... }, []);
 
   const handleLogin = (user, token) => {
-    localStorage.setItem('token', token);
+    // Artık token'ı localStorage'a kaydetmiyoruz.
+    // Sadece o anki oturum için kullanıcıyı state'e set ediyoruz.
     setCurrentUser(user);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    // localStorage'dan silinecek bir token yok.
+    // Sadece kullanıcıyı state'ten kaldırıyoruz.
     setCurrentUser(null);
   };
 
-  if (!authIsReady) {
-    return <div className="loading-screen">Yükleniyor...</div>;
-  }
+  // "authIsReady" kontrolüne artık ihtiyaç yok.
+  // if (!authIsReady) { ... }
 
   return (
     <div className="App">
