@@ -1,9 +1,6 @@
-// Düzeltilmiş Lobby.js
-
 import React, { useState } from 'react';
-// useNavigate ve useEffect artık burada kullanılmayacak.
 
-function Lobby({ onRoomCreated }) { // onRoomCreated prop'u App.js'ten geliyor.
+function Lobby({ onRoomCreated }) { 
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
@@ -13,9 +10,7 @@ function Lobby({ onRoomCreated }) { // onRoomCreated prop'u App.js'ten geliyor.
       return;
     }
     setError('');
-    // Backend'e oda oluşturma isteği göndermemiz gerekecek.
-    // Şimdilik, sadece App.js'e "yeni bir oda isteniyor" bilgisini gönderiyoruz.
-    onRoomCreated({ name }); // Sadece kullanıcı adını gönderiyoruz, oda ID'sini backend üretecek.
+    onRoomCreated({ name }); 
   };
 
   return (

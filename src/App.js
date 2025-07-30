@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // useEffect'e artık burada gerek yok
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
 
@@ -8,42 +8,74 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import Room from './pages/Room';
 import Navbar from './components/Navbar';
+// --- YENİ "NÖBETÇİLERİ" IMPORT ET ---
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicOnlyRoute from './components/PublicOnlyRoute';
+// --- IMPORT SONU ---
 
 function App() {
-  // currentUser state'i artık her zaman null olarak başlar.
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Otomatik giriş (auto-login) mantığı tamamen kaldırıldı.
-  // useEffect(() => { ... }, []);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = sessionStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const handleLogin = (user, token) => {
-    // Artık token'ı localStorage'a kaydetmiyoruz.
-    // Sadece o anki oturum için kullanıcıyı state'e set ediyoruz.
+    sessionStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.setItem('token', token);
     setCurrentUser(user);
   };
 
   const handleLogout = () => {
-    // localStorage'dan silinecek bir token yok.
-    // Sadece kullanıcıyı state'ten kaldırıyoruz.
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('token');
     setCurrentUser(null);
   };
-
-  // "authIsReady" kontrolüne artık ihtiyaç yok.
-  // if (!authIsReady) { ... }
 
   return (
     <div className="App">
       <Navbar user={currentUser} onLogout={handleLogout} />
       
       <main className="app-content">
+        {/* --- ROUTES BLOĞU TAMAMEN YENİLENDİ --- */}
         <Routes>
+          {/* Sadece halka açık rotalar */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route 
+            path="/register" 
+            element={
+              <PublicOnlyRoute user={currentUser}>
+                <RegisterPage />
+              </PublicOnlyRoute>
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              <PublicOnlyRoute user={currentUser}>
+                <LoginPage onLogin={handleLogin} />
+              </PublicOnlyRoute>
+            } 
+          />
           
-          <Route path="/dashboard" element={<DashboardPage user={currentUser} />} />
-          <Route path="/room/:roomId" element={<Room user={currentUser} />} />
+          {/* Korumalı rotalar (giriş yapmayı gerektiren) */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute user={currentUser}>
+                <DashboardPage user={currentUser} />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/room/:roomId" 
+            element={
+              <ProtectedRoute user={currentUser}>
+                <Room user={currentUser} />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
+        {/* --- YENİLEME SONU --- */}
       </main>
     </div>
   );

@@ -1,9 +1,9 @@
 import React from 'react';
-import './Modal.css'; // Birazdan bu CSS dosyasını da oluşturacağız
+import './Modal.css';
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) {
-    return null; // Eğer modal açık değilse, hiçbir şey gösterme
+    return null; 
   }
 
   return (

@@ -2,27 +2,28 @@ import React, { useState, useEffect } from 'react';
 
 const CARD_SETS = {
   FIBONACCI: ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'],
-  // YENİ: İsteğini karşılayan, ara değerleri içeren set.
   MODIFIED_FIB: ['0', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '8', '13', '?', '☕'],
   SCRUM: ['0', '½', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'],
   SEQUENTIAL: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
   HOURS: ['1', '2', '4', '8', '16', '24', '32', '40'],
 };
-// MANUAL_CARDS listesi de bu yeni seti içerecek şekilde güncellendi.
 const MANUAL_CARDS = [...new Set([...CARD_SETS.FIBONACCI, ...CARD_SETS.MODIFIED_FIB, ...CARD_SETS.SCRUM, ...CARD_SETS.SEQUENTIAL, ...CARD_SETS.HOURS])].sort((a,b) => {
-    // '½' gibi değerler için özel sıralama
     const valA = a === '½' ? 0.5 : Number(a);
     const valB = b === '½' ? 0.5 : Number(b);
-    if (isNaN(valA) || isNaN(valB)) return 1; // '?' ve '☕' gibi metinleri sona at
+    if (isNaN(valA) || isNaN(valB)) return 1; 
     return valA - valB;
 });
 
-
-function TaskForm({ roomId, stompClient, user }) { 
+// --- BİLEŞEN PROPS'LARI GÜNCELLENDİ ---
+// Artık stompClient veya user'a ihtiyacı yok.
+// Bunun yerine, yeni bir görev oluşturulduğunda Room.js'i bilgilendirmek için
+// 'onTaskCreated' adında bir fonksiyon alacak.
+function TaskForm({ roomId, onTaskCreated }) { 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [cardSet, setCardSet] = useState('FIBONACCI');
   const [selectedCards, setSelectedCards] = useState(new Set(CARD_SETS.FIBONACCI));
+  const [isSubmitting, setIsSubmitting] = useState(false); // Butonun tekrar tekrar basılmasını engellemek için
 
   useEffect(() => {
     if (cardSet === 'MANUAL') {
@@ -44,25 +45,57 @@ function TaskForm({ roomId, stompClient, user }) {
     });
   };
 
-  const handleSetTask = () => {
-    if (title && stompClient && user?.name) { 
-      const taskMessage = {
-        sender: user.name,
-        content: title, 
-        description: description, 
-        cardSet: Array.from(selectedCards).join(','),
-        type: 'SET_TASK'
-      };
+  // --- BU FONKSİYON TAMAMEN YENİLENDİ (ARTIK FETCH KULLANIYOR) ---
+  const handleSetTask = async () => {
+    if (!title.trim() || isSubmitting) {
+      return;
+    }
+    setIsSubmitting(true);
 
-      stompClient.publish({
-        destination: `/app/room/${roomId}/set-task`,
-        body: JSON.stringify(taskMessage),
+    const taskData = {
+      title: title.trim(),
+      description: description.trim(),
+      cardSet: Array.from(selectedCards).join(','),
+    };
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert("Yetkilendirme anahtarı bulunamadı.");
+        setIsSubmitting(false);
+        return;
+    }
+
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(taskData)
       });
 
+      if (!response.ok) {
+        throw new Error("Görev oluşturulamadı.");
+      }
+      
+      const createdTask = await response.json();
+      
+      // Başarılı olursa, Room.js'e haber ver (artık sadece formu kapatmak için)
+      onTaskCreated(createdTask);
+
+      // Formu temizle
       setTitle('');
       setDescription('');
+
+    } catch (error) {
+      console.error("Görev oluşturma hatası:", error);
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  // --- YENİLEME SONU ---
 
   const currentVisibleCards = cardSet === 'MANUAL' ? MANUAL_CARDS : CARD_SETS[cardSet];
 
@@ -89,7 +122,6 @@ function TaskForm({ roomId, stompClient, user }) {
           onChange={(e) => setCardSet(e.target.value)}
         >
           <option value="FIBONACCI">Fibonacci</option>
-          {/* YENİ: Dropdown'a yeni seçenek eklendi. */}
           <option value="MODIFIED_FIB">Değiştirilmiş Fibonacci (Ara Değerli)</option>
           <option value="SCRUM">Scrum </option>
           <option value="SEQUENTIAL">Sıralı</option>
@@ -112,7 +144,9 @@ function TaskForm({ roomId, stompClient, user }) {
         ))}
       </div>
 
-      <button onClick={handleSetTask}>Görevi Ayarla</button>
+      <button onClick={handleSetTask} disabled={isSubmitting}>
+        {isSubmitting ? 'Kaydediliyor...' : 'Görevi Listeye Ekle'}
+      </button>
     </div>
   );
 }

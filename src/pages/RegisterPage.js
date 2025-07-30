@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import './AuthForm.css'; // Login ve Register sayfaları için ortak bir CSS dosyası kullanacağız.
+import './AuthForm.css'; 
 
 function RegisterPage() {
   const [name, setName] = useState('');
@@ -11,7 +11,6 @@ function RegisterPage() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    // Formun sayfayı yeniden yüklemesini engelle
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -26,8 +25,6 @@ function RegisterPage() {
       });
 
       if (!response.ok) {
-        // Eğer sunucu 4xx veya 5xx bir status kodu döndürdüyse,
-        // cevabı metin olarak alıp hata mesajı olarak göster.
         const errorText = await response.text();
         throw new Error(errorText || 'Bir hata oluştu.');
       }

@@ -27,7 +27,6 @@ function LoginPage({ onLogin }) {
         throw new Error(errorText || 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.');
       }
 
-      // Backend'den gelen cevabı (user bilgisi ve token) al
       const data = await response.json(); 
 
       // Token'ı tarayıcının yerel depolamasına kaydet
@@ -35,10 +34,8 @@ function LoginPage({ onLogin }) {
         localStorage.setItem('token', data.token);
       }
 
-      // App component'ine kullanıcının giriş yaptığını bildir
       onLogin(data.user, data.token);
 
-      // Kullanıcıyı kontrol paneline yönlendir
       navigate('/dashboard');
 
     } catch (err) {

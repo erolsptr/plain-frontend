@@ -82,7 +82,6 @@
   font-style: italic;
 }
 
-/* KART GÖRÜNÜMÜ İÇİN GEREKLİ STİLLER */
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -124,21 +123,20 @@
   padding-top: 10px;
   margin-top: 10px;
 }
-/* === YENİ VE İYİLEŞTİRİLMİŞ ODA KARTI STİLLERİ === */
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Minimum genişliği biraz artırdık */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
   gap: 25px;
 }
 
 .room-card {
   background-color: var(--bg-color-light);
-  border-radius: 12px; /* Daha yuvarlak köşeler */
+  border-radius: 12px; 
   border: 1px solid var(--border-color);
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Başlık ve gövde arasına boşluk */
+  gap: 15px; 
   transition: all 0.3s ease;
   cursor: pointer;
 }
@@ -146,7 +144,7 @@
 .room-card:hover {
   transform: translateY(-6px);
   border-color: var(--primary-color);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Daha belirgin gölge */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); 
 }
 
 .room-card-header {
@@ -162,7 +160,7 @@
   color: var(--primary-color);
   font-family: 'Courier New', Courier, monospace;
   word-break: break-all;
-  margin: 0; /* Başlık varsayılan margin'ini sıfırla */
+  margin: 0;
 }
 
 .room-card-actions {
@@ -171,11 +169,11 @@
 }
 
 .btn-icon {
-  background-color: rgba(0, 0, 0, 0.05); /* Çok hafif bir arka plan */
+  background-color: rgba(0, 0, 0, 0.05); 
   border: 1px solid transparent;
   width: 32px;
   height: 32px;
-  border-radius: 50%; /* Tam yuvarlak butonlar */
+  border-radius: 50%; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,13 +183,13 @@
 }
 
 .btn-icon svg {
-  stroke: currentColor; /* Butonun rengini SVG'ye uygula */
+  stroke: currentColor; 
 }
 
 .btn-icon:hover {
   border-color: var(--primary-color);
   background-color: var(--primary-color);
-  color: white; /* İkon rengini beyaz yap */
+  color: white; 
 }
 
 .btn-delete:hover {

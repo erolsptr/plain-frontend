@@ -1,12 +1,9 @@
-// Yeni dosya: src/JoinPrompt.js
-
 import React, { useState } from 'react';
 
 function JoinPrompt({ onNameSubmit }) {
   const [name, setName] = useState('');
 
   const handleSubmit = (e) => {
-    // Formun sayfayı yenilemesini engelle
     e.preventDefault(); 
     if (name) {
       onNameSubmit(name);

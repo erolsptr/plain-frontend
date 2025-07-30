@@ -1,14 +1,12 @@
-/* Yeni dosya: src/VotingCards.css */
-
 .voting-cards-container {
   margin-top: 20px;
 }
 
 .cards {
   display: flex;
-  flex-wrap: wrap; /* Kartlar sığmazsa alt satıra geçsin */
-  gap: 10px; /* Kartlar arası boşluk */
-  justify-content: center; /* Kartları ortala */
+  flex-wrap: wrap; 
+  gap: 10px; 
+  justify-content: center; 
   margin-top: 15px;
 }
 
@@ -31,7 +29,7 @@
 .vote-card:hover:not(:disabled) {
   background-color: #61dafb;
   color: #282c34;
-  transform: translateY(-5px); /* Hafif yukarı kalkma efekti */
+  transform: translateY(-5px); 
 }
 
 .vote-card:disabled {

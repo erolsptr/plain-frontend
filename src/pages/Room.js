@@ -18,8 +18,11 @@ const getVoteResult = (votes) => {
     const voteCounts = Object.values(votes).reduce((acc, vote) => { acc[vote] = (acc[vote] || 0) + 1; return acc; }, {});
     let maxCount = 0; let consensusVote = null; let tie = false;
     for (const vote in voteCounts) {
-        if (voteCounts[vote] > maxCount) { maxCount = voteCounts[vote]; consensusVote = vote; tie = false; }
-        else if (voteCounts[vote] === maxCount) { tie = true; }
+        if (voteCounts[vote] > maxCount) {
+            maxCount = voteCounts[vote]; consensusVote = vote; tie = false;
+        } else if (voteCounts[vote] === maxCount) {
+            tie = true;
+        }
     }
     return tie ? "Anlaşma Yok" : consensusVote;
 };
@@ -29,6 +32,7 @@ function Room({ user: currentUser }) {
   const location = useLocation();
   
   const [user, setUser] = useState(currentUser || location.state?.user);
+  
   const [stompClient, setStompClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [roomOwner, setRoomOwner] = useState(null);
@@ -38,29 +42,40 @@ function Room({ user: currentUser }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [revealVotes, setRevealVotes] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(location.state?.isNewRoom || false);
-  const [taskHistory, setTaskHistory] = useState([]);
+  
+  const [completedTasks, setCompletedTasks] = useState([]);
+  const [pendingTasks, setPendingTasks] = useState([]);
+  const [activeTab, setActiveTab] = useState('pending');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
-  const fetchTaskHistory = useCallback(async () => {
+  const fetchTasks = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const response = await fetch(`/api/rooms/${roomId}/tasks`, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!response.ok) { throw new Error('Geçmiş görevler alınamadı.'); }
-      const data = await response.json();
-      setTaskHistory(data);
+      const [completedResponse, pendingResponse] = await Promise.all([
+        fetch(`/api/rooms/${roomId}/tasks`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/rooms/${roomId}/pending-tasks`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      if (!completedResponse.ok || !pendingResponse.ok) {
+        throw new Error('Görevler alınamadı.');
+      }
+      const completedData = await completedResponse.json();
+      const pendingData = await pendingResponse.json();
+      setCompletedTasks(completedData);
+      setPendingTasks(pendingData);
     } catch (error) {
-      console.error("Geçmiş görevleri çekerken hata:", error);
+      console.error("Görevleri çekerken hata:", error);
     }
   }, [roomId]);
 
   useEffect(() => {
     if (!user?.name) return;
     
-    fetchTaskHistory();
+    fetchTasks();
 
-    let stateSub, votesSub, revealSub, historySub; // historySub eklendi
+    let stateSub, votesSub, revealSub, historySub;
     const client = new Client({
       webSocketFactory: () => new SockJS(SOCKET_URL),
       connectHeaders: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -71,23 +86,16 @@ function Room({ user: currentUser }) {
             const roomState = JSON.parse(message.body);
             setRoomOwner(roomState.owner);
             setParticipants(roomState.participants || []);
-            const newActiveTask = roomState.activeTask || { title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '' };
-            setActiveTask(newActiveTask);
-            if (newActiveTask.title !== 'Henüz bir görev belirlenmedi.') { setShowTaskForm(false); } else { setShowTaskForm(user?.name === roomState.owner); }
+            setActiveTask(roomState.activeTask || { title: 'Henüz bir görev belirlenmedi.', description: '', cardSet: '' });
             setVotes(roomState.votes || {});
             setRevealVotes(false);
             setHasVoted(false);
         });
         votesSub = client.subscribe(`/topic/room/${roomId}/votes`, (message) => setVotes(JSON.parse(message.body)));
         revealSub = client.subscribe(`/topic/room/${roomId}/reveal`, () => setRevealVotes(true));
-        
-        // --- YENİ VE KRİTİK ABONELİK BURADA ---
         historySub = client.subscribe(`/topic/room/${roomId}/history-updated`, () => {
-          // Sunucudan "geçmiş güncellendi" sinyali geldiğinde, listeyi yeniden çek.
-          fetchTaskHistory();
+          fetchTasks();
         });
-        // --- ABONELİK SONU ---
-
         client.publish({ destination: `/app/room/${roomId}/register`, body: JSON.stringify({ sender: user.name }) });
       },
       onDisconnect: () => setIsConnected(false),
@@ -98,10 +106,10 @@ function Room({ user: currentUser }) {
       if (stateSub) stateSub.unsubscribe();
       if (votesSub) votesSub.unsubscribe();
       if (revealSub) revealSub.unsubscribe();
-      if (historySub) historySub.unsubscribe(); // Aboneliği temizlemeyi unutma
+      if (historySub) historySub.unsubscribe(); 
       if (client) client.deactivate();
     };
-  }, [user, roomId, fetchTaskHistory]); // fetchTaskHistory'yi bağımlılıklara eklemek doğrudur
+  }, [user, roomId, fetchTasks]);
 
   const isModerator = user?.name === roomOwner;
   const allVotesIn = participants.length > 0 && participants.length === Object.keys(votes).length;
@@ -128,7 +136,6 @@ function Room({ user: currentUser }) {
     }
   };
 
-  // --- BU FONKSİYON ARTIK ÇOK DAHA BASİT ---
   const handleSaveResult = async () => {
     if (!isModerator) return;
     const token = localStorage.getItem('token');
@@ -142,13 +149,30 @@ function Room({ user: currentUser }) {
         if (response.status === 403) { throw new Error("Sadece oda sahibi sonuçları kaydedebilir."); }
         throw new Error("Sonuçlar sunucuya kaydedilemedi.");
       }
-      // ARTIK HİÇBİR ŞEY YAPMIYORUZ! Backend'in göndereceği WebSocket sinyali her şeyi halledecek.
     } catch (error) {
       console.error("Sonuç kaydetme hatası:", error);
       alert(error.message);
     }
   };
-  // --- GÜNCELLEME SONU ---
+
+  const handleStartVoting = (task) => {
+    if (stompClient && isModerator) {
+      // Artık yeni bir mesaj nesnesi oluşturmuyoruz.
+      // "Hazır Olanlar" listesinden gelen, ID'si dahil tüm task nesnesini doğrudan gönderiyoruz.
+      // Sadece gönderenin kim olduğunu ekliyoruz.
+      const payload = {
+        ...task, // task nesnesinin tüm özelliklerini kopyala (id, title, description, etc.)
+        sender: user.name
+      };
+      
+      stompClient.publish({
+        destination: `/app/room/${roomId}/set-task`,
+        body: JSON.stringify(payload),
+      });
+    }
+  };
+
+  
   
   const toggleTaskForm = () => setShowTaskForm(prev => !prev);
   
@@ -160,7 +184,6 @@ function Room({ user: currentUser }) {
   if (!user) return <JoinPrompt onNameSubmit={(name) => setUser({ name })} />;
   if (!isConnected) return <div className="loading-screen">Odaya bağlanılıyor...</div>;
 
-  const currentCards = activeTask.cardSet ? activeTask.cardSet.split(',') : [];
   const consensus = getVoteResult(votes);
 
   return (
@@ -181,8 +204,12 @@ function Room({ user: currentUser }) {
             </ul>
           </div>
           
-          {activeTask.title !== 'Henüz bir görev belirlenmedi.' && !revealVotes && (
-            <button onClick={handleRevealVotes} disabled={!isModerator || !allVotesIn} className="reveal-button side-panel-button" title={!isModerator ? "Sadece oda sahibi oyları açabilir." : ""}>
+          {isModerator && activeTask.title !== 'Henüz bir görev belirlenmedi.' && !revealVotes && (
+            <button 
+              onClick={handleRevealVotes} 
+              disabled={!allVotesIn} 
+              className="reveal-button side-panel-button"
+            >
               Oyları Göster
             </button>
           )}
@@ -200,7 +227,7 @@ function Room({ user: currentUser }) {
           
           {isModerator && (
               <button onClick={toggleTaskForm} className="reveal-button new-task-button side-panel-button"> 
-                  {showTaskForm ? 'Formu Kapat' : (activeTask.title === 'Henüz bir görev belirlenmedi.' ? 'Yeni Görev Belirle' : 'Görevi Değiştir')}
+                  {showTaskForm ? 'Formu Kapat' : 'Yeni Görev Ekle'}
               </button>
           )}
         </div>
@@ -208,66 +235,86 @@ function Room({ user: currentUser }) {
           <TaskDisplay task={activeTask} />
           
           {showTaskForm && isModerator ? (
-              <TaskForm roomId={roomId} stompClient={stompClient} user={user} />
-          ) : revealVotes ? (
-              <div className="results-container">
-                  <h2>Oylama Sonuçları</h2>
-                  {consensus && (
-                      <div className="consensus-card">
-                          <div className="consensus-label">Karar Oyu</div>
-                          <div className="consensus-value">{consensus}</div>
-                      </div>
-                  )}
-                  <div className="results-grid">
-                    {Object.entries(votes).map(([name, vote]) => (
-                      <div key={name} className="result-card">
-                        <div className="vote-value-big">{vote}</div>
-                        <div className="voter-name">{name}</div>
-                      </div>
-                    ))}
-                  </div>
-              </div>
-          ) : (
-              activeTask.title !== 'Henüz bir görev belirlenmedi.' && (
-                  <VotingCards cards={currentCards} onVote={handleVote} hasVoted={hasVoted} />
-              )
-          )}
-
-          <div className="task-history-section">
-              <h3>Geçmiş Oylamalar</h3>
-              {taskHistory.length > 0 ? (
-                  <div className="task-history-grid">
-                      {taskHistory.map(task => (
-                          <div key={task.taskId} className="task-history-card" onClick={() => handleHistoryCardClick(task)}>
-                              <div className="task-history-card-header">
-                                  <span className="task-history-card-title">{task.title}</span>
-                                  <span className="task-history-card-score">{task.consensusScore}</span>
-                              </div>
-                              <div className="task-history-card-footer">
-                                  <span>{Object.keys(task.votes).length} Katılımcı</span>
-                              </div>
-                          </div>
+              <TaskForm roomId={roomId} onTaskCreated={() => setShowTaskForm(false)} /> // Başarılı olduğunda sadece formu kapat
+          ) : activeTask.title !== 'Henüz bir görev belirlenmedi.' ? (
+              revealVotes ? (
+                <div className="results-container">
+                    <h2>Oylama Sonuçları</h2>
+                    {consensus && (
+                        <div className="consensus-card">
+                            <div className="consensus-label">Karar Oyu</div>
+                            <div className="consensus-value">{consensus}</div>
+                        </div>
+                    )}
+                    <div className="results-grid">
+                      {Object.entries(votes).map(([name, vote]) => (
+                        <div key={name} className="result-card">
+                          <div className="vote-value-big">{vote}</div>
+                          <div className="voter-name">{name}</div>
+                        </div>
                       ))}
-                  </div>
+                    </div>
+                </div>
               ) : (
-                  <p className="placeholder-text">Bu odada henüz tamamlanmış bir oylama yok.</p>
+                  <VotingCards cards={activeTask.cardSet.split(',')} onVote={handleVote} hasVoted={hasVoted} />
+              )
+          ) : null}
+
+          <div className="task-list-section">
+            <div className="task-list-tabs">
+              <button onClick={() => setActiveTab('pending')} className={activeTab === 'pending' ? 'active' : ''}>
+                Hazır Olanlar ({pendingTasks.length})
+              </button>
+              <button onClick={() => setActiveTab('completed')} className={activeTab === 'completed' ? 'active' : ''}>
+                Tamamlananlar ({completedTasks.length})
+              </button>
+            </div>
+            
+            <div className="task-list-content">
+              {activeTab === 'pending' && (
+                pendingTasks.length > 0 ? (
+                  pendingTasks.map(task => (
+                    <div key={task.id} className="pending-task-card">
+                      <span>{task.title}</span>
+                      {isModerator && (
+                        <button onClick={() => handleStartVoting(task)} className="start-voting-btn">
+                          Oylamayı Başlat
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : <p className="placeholder-text">Oylanacak hazır görev yok.</p>
               )}
+
+              {activeTab === 'completed' && (
+                completedTasks.length > 0 ? (
+                  completedTasks.map(task => (
+                    <div key={task.taskId} className="task-history-card" onClick={() => handleHistoryCardClick(task)}>
+                      <div className="task-history-card-header">
+                        <span className="task-history-card-title">{task.title}</span>
+                        <span className="task-history-card-score">{task.consensusScore}</span>
+                      </div>
+                      <div className="task-history-card-footer">
+                        <span>{Object.keys(task.votes).length} Katılımcı</span>
+                      </div>
+                    </div>
+                  ))
+                ) : <p className="placeholder-text">Bu odada henüz tamamlanmış bir oylama yok.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {selectedTask && (
           <div className="task-detail-modal">
             <h2>{selectedTask.title}</h2>
             {selectedTask.description && <p className="task-detail-description">{selectedTask.description}</p>}
-            
             <div className="task-detail-grid">
               <div className="task-detail-consensus">
                 <h4>Karar Oyu</h4>
                 <div className="task-detail-score">{selectedTask.consensusScore}</div>
               </div>
-
               <div className="task-detail-votes">
                 <h4>Verilen Oylar</h4>
                 <ul>

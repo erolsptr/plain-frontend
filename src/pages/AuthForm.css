@@ -7,12 +7,12 @@
 
 .auth-form {
   width: 100%;
-  max-width: 420px; /* Biraz genişlettim */
-  background-color: var(--panel-color); /* Renk değişkeni kullandım */
-  padding: 40px; /* Padding'i her yöne artırdım, bu ortalamaya yardımcı olur */
+  max-width: 420px; 
+  background-color: var(--panel-color); 
+  padding: 40px; 
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  box-sizing: border-box; /* Padding'in genişliği etkilememesini sağlar */
+  box-sizing: border-box;
 }
 
 .auth-form h2 {
@@ -23,7 +23,7 @@
 
 .form-group {
   margin-bottom: 20px;
-  text-align: left; /* Label'ları sola yasla */
+  text-align: left; 
 }
 
 .form-group label {

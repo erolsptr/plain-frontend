@@ -2,8 +2,6 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
-// Logomuzu projemize dahil ediyoruz.
-// Bu yolun doğru olduğundan emin ol: src/assets/logo.png
 import logo from '../assets/logo.png'; 
 
 function Navbar({ user, onLogout }) {
@@ -17,10 +15,12 @@ function Navbar({ user, onLogout }) {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
-          {/* Metin yerine artık bir resim gösteriyoruz */}
+        {/* --- BU BÖLÜM DEĞİŞTİRİLDİ --- */}
+        <Link to={user ? "/dashboard" : "/"} className="navbar-logo">
+          {/* Eğer kullanıcı varsa /dashboard'a, yoksa /'a yönlendir */}
           <img src={logo} alt="plAIn Logo" className="navbar-logo-img" />
         </Link>
+        {/* --- DEĞİŞİKLİK SONU --- */}
         <ul className="navbar-menu">
           {user ? (
             <>

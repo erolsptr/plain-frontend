@@ -1,8 +1,6 @@
 import React from 'react';
 import './VotingCards.css';
 
-// Artık VOTE_VALUES sabitine ihtiyacımız yok.
-// Kartlar bize prop olarak gelecek.
 
 function VotingCards({ cards, onVote, hasVoted }) {
   return (

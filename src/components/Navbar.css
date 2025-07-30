@@ -22,20 +22,18 @@
   padding: 0 30px;
 }
 
-/* DEĞİŞİKLİK: Logoyu içeren linke üstten ve alttan padding veriyoruz. */
 .navbar-logo {
   cursor: pointer;
   text-decoration: none;
   display: flex;
   align-items: center;
   height: 100%;
-  padding: 10px 0; /* Üstten ve alttan 10px boşluk bırakır */
-  box-sizing: border-box; /* Padding'in, yüksekliği artırmamasını sağlar */
+  padding: 10px 0; 
+  box-sizing: border-box; 
 }
 
-/* DEĞİŞİKLİK: Logo artık kalan alanın tamamını dolduracak. */
 .navbar-logo-img {
-  height: 275%; /* Parent'ın (padding sonrası) yüksekliğinin %100'ünü kapla */
+  height: 275%; 
   width: auto;
   object-fit: contain;
 }

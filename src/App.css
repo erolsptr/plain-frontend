@@ -19,7 +19,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - 121px); /* Header'ın padding'i ile birlikte */
+  min-height: calc(100vh - 121px); 
   background-color: var(--bg-color);
 }
 
@@ -86,8 +86,8 @@
 
 .new-task-button {
   background-color: var(--secondary-color);
-  margin-top: auto; /* Bu butonu panelin en altına iter */
-  padding-top: 15px; /* Panelin altındaki boşluk için */
+  margin-top: auto; 
+  padding-top: 15px; 
 }
 
 
@@ -130,9 +130,7 @@
 .card-checkbox-item:hover {
   background-color: var(--panel-hover-color);
 }
-/* App.css sonuna ekle */
 
-/* TaskForm içindeki ana butonu stillendiriyoruz */
 .task-form button {
   padding: 12px 15px;
   border-radius: 6px;
@@ -142,7 +140,7 @@
   font-weight: bold;
   font-size: 1em;
   cursor: pointer;
-  margin-top: 10px; /* Diğer elemanlardan ayırmak için */
+  margin-top: 10px; 
   transition: background-color 0.2s ease;
 }
 
