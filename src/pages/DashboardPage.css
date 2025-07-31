@@ -206,3 +206,39 @@
   border-top: 1px solid var(--border-color);
   padding-top: 15px;
 }
+/* === ODA OLUŞTURMA MODAL STİLLERİ (YENİ) === */
+.create-room-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Elemanlar arasına boşluk koy */
+  text-align: center;
+}
+
+.create-room-modal h2 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.create-room-modal p {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--text-color-muted);
+}
+
+.room-name-input-modal {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color-light);
+  color: var(--text-color);
+  font-size: 1.1rem; /* Biraz daha büyük font */
+  text-align: center;
+  box-sizing: border-box; /* Padding'in genişliği etkilememesi için */
+}
+
+/* Modal içindeki butona da stil verelim */
+.create-room-modal .btn-primary {
+  width: 100%;
+  padding: 12px;
+}

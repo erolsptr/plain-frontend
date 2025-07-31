@@ -383,3 +383,58 @@
   background-color: var(--success-color);
   color: white;
 }
+/* === ODA BAŞLIĞI VE LİNK KOPYALAMA (YENİ) === */
+.room-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.room-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.room-invite-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--text-color-muted);
+}
+
+.copy-link-btn {
+  background: none;
+  border: none;
+  color: var(--text-color-muted);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative; /* Bildirim için gerekli */
+}
+
+.copy-link-btn:hover {
+  background-color: var(--panel-hover-color);
+  color: var(--primary-color);
+}
+
+/* "Kopyalandı!" bildirimi için stil */
+.copy-tooltip {
+  position: absolute;
+  bottom: 120%; /* Butonun üstünde görünmesini sağlar */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--success-color);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+  z-index: 10;
+}

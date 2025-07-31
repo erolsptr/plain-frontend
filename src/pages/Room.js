@@ -32,7 +32,6 @@ function Room({ user: currentUser }) {
   const location = useLocation();
   
   const [user, setUser] = useState(currentUser || location.state?.user);
-  
   const [stompClient, setStompClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [roomOwner, setRoomOwner] = useState(null);
@@ -42,13 +41,13 @@ function Room({ user: currentUser }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [revealVotes, setRevealVotes] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(location.state?.isNewRoom || false);
-  
   const [completedTasks, setCompletedTasks] = useState([]);
   const [pendingTasks, setPendingTasks] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [roomName, setRoomName] = useState('Oda Yükleniyor...');
+  const [showCopyTooltip, setShowCopyTooltip] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -58,9 +57,7 @@ function Room({ user: currentUser }) {
         fetch(`/api/rooms/${roomId}/tasks`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`/api/rooms/${roomId}/pending-tasks`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
-      if (!completedResponse.ok || !pendingResponse.ok) {
-        throw new Error('Görevler alınamadı.');
-      }
+      if (!completedResponse.ok || !pendingResponse.ok) { throw new Error('Görevler alınamadı.'); }
       const completedData = await completedResponse.json();
       const pendingData = await pendingResponse.json();
       setCompletedTasks(completedData);
@@ -69,13 +66,34 @@ function Room({ user: currentUser }) {
       console.error("Görevleri çekerken hata:", error);
     }
   }, [roomId]);
+  
+  useEffect(() => {
+    const fetchRoomDetails = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const response = await fetch(`/api/room-details?roomIds=${roomId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!response.ok) throw new Error('Oda detayları alınamadı.');
+        const data = await response.json();
+        if (data.length > 0) {
+          setRoomName(data[0].roomName);
+        } else {
+          setRoomName('İsimsiz Oda');
+        }
+      } catch (error) {
+        console.error("Oda detaylarını çekerken hata:", error);
+        setRoomName('Bilinmeyen Oda');
+      }
+    };
+    fetchRoomDetails();
+  }, [roomId]);
 
   useEffect(() => {
     if (!user?.name) return;
     
     fetchTasks();
 
-    let stateSub, votesSub, revealSub, historySub;
+    let stateSub, votesSub, revealSub, historySub; 
     const client = new Client({
       webSocketFactory: () => new SockJS(SOCKET_URL),
       connectHeaders: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -109,7 +127,7 @@ function Room({ user: currentUser }) {
       if (historySub) historySub.unsubscribe(); 
       if (client) client.deactivate();
     };
-  }, [user, roomId, fetchTasks]);
+  }, [user, roomId, fetchTasks]); 
 
   const isModerator = user?.name === roomOwner;
   const allVotesIn = participants.length > 0 && participants.length === Object.keys(votes).length;
@@ -157,28 +175,35 @@ function Room({ user: currentUser }) {
 
   const handleStartVoting = (task) => {
     if (stompClient && isModerator) {
-      // Artık yeni bir mesaj nesnesi oluşturmuyoruz.
-      // "Hazır Olanlar" listesinden gelen, ID'si dahil tüm task nesnesini doğrudan gönderiyoruz.
-      // Sadece gönderenin kim olduğunu ekliyoruz.
       const payload = {
-        ...task, // task nesnesinin tüm özelliklerini kopyala (id, title, description, etc.)
+        ...task,
         sender: user.name
       };
-      
       stompClient.publish({
         destination: `/app/room/${roomId}/set-task`,
         body: JSON.stringify(payload),
       });
     }
   };
-
   
+  const handleTaskCreated = () => {
+    fetchTasks();
+    setShowTaskForm(false);
+  };
   
   const toggleTaskForm = () => setShowTaskForm(prev => !prev);
   
   const handleHistoryCardClick = (task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setShowCopyTooltip(true);
+    setTimeout(() => {
+      setShowCopyTooltip(false);
+    }, 2000);
   };
 
   if (!user) return <JoinPrompt onNameSubmit={(name) => setUser({ name })} />;
@@ -190,7 +215,16 @@ function Room({ user: currentUser }) {
     <>
       <div className="room-container">
         <div className="side-panel">
-          <h3>Oda: {roomId}</h3>
+          <div className="room-header">
+            <h3>{roomName}</h3>
+            <div className="room-invite-controls">
+                <span>Oda Kodu: {roomId}</span>
+                <button onClick={handleCopyLink} className="copy-link-btn" title="Davet Linkini Kopyala">
+                  {showCopyTooltip && <span className="copy-tooltip">Kopyalandı!</span>}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+            </div>
+          </div>
           <div>
             <h4>Katılımcılar ({Object.keys(votes).length}/{participants.length})</h4>
             <ul>
@@ -235,7 +269,7 @@ function Room({ user: currentUser }) {
           <TaskDisplay task={activeTask} />
           
           {showTaskForm && isModerator ? (
-              <TaskForm roomId={roomId} onTaskCreated={() => setShowTaskForm(false)} /> // Başarılı olduğunda sadece formu kapat
+              <TaskForm roomId={roomId} onTaskCreated={handleTaskCreated} />
           ) : activeTask.title !== 'Henüz bir görev belirlenmedi.' ? (
               revealVotes ? (
                 <div className="results-container">
